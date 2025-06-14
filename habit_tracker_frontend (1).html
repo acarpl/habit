@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-start p-6">
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow p-6">
+        <h1 class="text-3xl font-bold mb-4 text-center">Habit Tracker</h1>
+
+        <div class="mb-4">
+            <label for="datePicker" class="block mb-2 font-semibold">Pilih Tanggal</label>
+            <input type="date" id="datePicker" class="border p-2 rounded w-full" onchange="loadHabits()">
+        </div>
+
+        <div id="habitList" class="flex flex-col gap-2 mb-4"></div>
+
+        <div class="w-full bg-gray-300 h-4 rounded-full overflow-hidden">
+            <div id="progressBar" class="bg-green-500 h-full w-0 transition-all"></div>
+        </div>
+        <p id="progressText" class="mt-2 text-center font-semibold">0%</p>
+
+        <div class="mt-4">
+            <label for="notes" class="block mb-2 font-semibold">Catatan Harian</label>
+            <textarea id="notes" rows="3" class="border p-2 rounded w-full" oninput="saveNotes()"></textarea>
+        </div>
+    </div>
+
+    <script>
+        let habits = JSON.parse(localStorage.getItem('habitsData')) || {};
+
+        const defaultHabits = [
+            "Bangun Pagi",
+            "Olahraga",
+            "Journaling",
+            "Belajar",
+            "Tidur Cukup",
+            "Ngoding 1-2 Jam",
+            "Minum Air Putih yang Cukup",
+            "Berhenti Scroll Sosmed Berlebihan",
+            "Ambil Waktu Istirahat",
+            "Ucapin Terima Kasih ke Orang yang Bantu"
+        ];
+
+        function getSelectedDate() {
+            return document.getElementById('datePicker').value || new Date().toISOString().split('T')[0];
+        }
+
+        function saveHabits() {
+            localStorage.setItem('habitsData', JSON.stringify(habits));
+        }
+
+        function loadHabits() {
+            const date = getSelectedDate();
+            const habitList = document.getElementById('habitList');
+            habitList.innerHTML = '';
+
+            if (!habits[date]) {
+                habits[date] = { habits: defaultHabits.map(name => ({ name, checked: false })), notes: '' };
+            }
+
+            habits[date].habits.forEach((habit, index) => {
+                const habitItem = document.createElement('div');
+                habitItem.className = 'flex items-center justify-between bg-gray-50 p-2 rounded';
+
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = habit.checked;
+                checkbox.onchange = () => {
+                    habits[date].habits[index].checked = checkbox.checked;
+                    saveHabits();
+                    updateProgress();
+                };
+
+                const span = document.createElement('span');
+                span.textContent = habit.name;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+
+                habitItem.appendChild(label);
+
+                habitList.appendChild(habitItem);
+            });
+
+            document.getElementById('notes').value = habits[date].notes || '';
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const date = getSelectedDate();
+            const habitData = habits[date].habits;
+            const total = habitData.length;
+            const completed = habitData.filter(h => h.checked).length;
+            const percentage = total ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = percentage + '%';
+        }
+
+        function saveNotes() {
+            const date = getSelectedDate();
+            habits[date].notes = document.getElementById('notes').value;
+            saveHabits();
+        }
+
+        document.getElementById('datePicker').value = new Date().toISOString().split('T')[0];
+        loadHabits();
+    </script>
+</body>
+
+</html>
